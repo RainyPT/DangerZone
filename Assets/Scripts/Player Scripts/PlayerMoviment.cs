@@ -9,7 +9,7 @@ public class PlayerMoviment : MonoBehaviour
     private float gravity = -18f;
     private Vector3 velocity;
     private float jumpHeight=1.4f;
-    private Transform groundCheck;
+    public Transform groundCheck;
     private float groundDistance = 0.4f;
     public LayerMask groundMask;
     bool isGrounded;
@@ -17,7 +17,6 @@ public class PlayerMoviment : MonoBehaviour
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-        groundCheck = GameObject.Find("GroundCheck").transform;
     }
 
     // Update is called once per frame
@@ -31,8 +30,8 @@ public class PlayerMoviment : MonoBehaviour
         playerMovInput[0] = Input.GetAxis("Horizontal");
         playerMovInput[2] = Input.GetAxis("Vertical");
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        //Só dá para correr quando o utilizador está a premir a tecla left shift, quando não está a andar para os lados e quando está a andar para a frente 
-        float moveSpeed = isRunning && playerMovInput[0]==0 && playerMovInput[2]>0 ? 8f : 5f;
+        //Só dá para correr quando o utilizador está a premir a tecla left shift e está a andar para a frente
+        float moveSpeed = isRunning && playerMovInput[2]>0 ? 8f : 5f;
         Vector3 move = transform.right * playerMovInput[0] + transform.forward* playerMovInput[2];
         characterController.Move(move*moveSpeed*Time.deltaTime);
       

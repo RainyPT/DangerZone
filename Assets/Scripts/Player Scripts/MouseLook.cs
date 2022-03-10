@@ -4,23 +4,32 @@ using UnityEngine;
 
 public class MouseLook : MonoBehaviour
 {
-    public float sensitivity = 100f;
-    private Transform playerBody;
-    private float xRotation = 0f;
+    public Transform viewPoint;
+    public float mouseSensitivity=1f;
+    private float verticalRotStore;
+    private Vector2 mouseInput;
+    private bool mouseIsLocked;
+    public bool invertedLook;
     // Start is called before the first frame update
     void Start()
     {
-        playerBody = GameObject.Find("Player").transform;
         Cursor.lockState = CursorLockMode.Locked;
     }
 
     // Update is called once per frame
     void Update()
     {
-        float[] mouseCoords = { Input.GetAxis("Mouse X")*sensitivity*Time.deltaTime, Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime };
-        xRotation -= mouseCoords[1];
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        playerBody.Rotate(Vector3.up * mouseCoords[0]);
+        mouseIsLocked = Cursor.lockState == CursorLockMode.Locked;
+
+        if(mouseIsLocked && Input.GetButtonDown("Cancel"))
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+
+        mouseInput = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"))*mouseSensitivity;
+        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x,mouseInput.x+ transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
+        verticalRotStore += mouseInput.y;
+        verticalRotStore = Mathf.Clamp(verticalRotStore, -60f, 60f);
+        viewPoint.rotation = Quaternion.Euler(invertedLook ? verticalRotStore : -verticalRotStore, viewPoint.rotation.eulerAngles.y, viewPoint.rotation.eulerAngles.z);
     }
 }
