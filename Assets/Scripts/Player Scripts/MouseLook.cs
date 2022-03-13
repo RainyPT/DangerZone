@@ -1,15 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
 
-public class MouseLook : MonoBehaviour
+public class MouseLook : MonoBehaviourPunCallbacks
 {
-    public Transform viewPoint;
     public float mouseSensitivity=1f;
-    private float verticalRotStore;
-    private Vector2 mouseInput;
+    private float mouseSensMultiplier = 50f;
     private bool mouseIsLocked;
-    public bool invertedLook;
+    public Transform playerWholeBody;
+    public Transform playerCamera;
+    float xRotation = 0f;
     // Start is called before the first frame update
     void Start()
     {
@@ -19,17 +20,28 @@ public class MouseLook : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        mouseIsLocked = Cursor.lockState == CursorLockMode.Locked;
-
-        if(mouseIsLocked && Input.GetButtonDown("Cancel"))
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime* mouseSensMultiplier;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime* mouseSensMultiplier;
+        if (photonView.IsMine)
         {
-            Cursor.lockState = CursorLockMode.None;
-        }
+            xRotation -= mouseY;
+            xRotation = Mathf.Clamp(xRotation, -60f, 60f);
+            playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f , 0f);
+            playerWholeBody.Rotate(Vector3.up * mouseX);
+            
+            mouseIsLocked = Cursor.lockState == CursorLockMode.Locked;
 
-        mouseInput = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"))*mouseSensitivity;
-        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles.x,mouseInput.x+ transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
-        verticalRotStore += mouseInput.y;
-        verticalRotStore = Mathf.Clamp(verticalRotStore, -60f, 60f);
-        viewPoint.rotation = Quaternion.Euler(invertedLook ? verticalRotStore : -verticalRotStore, viewPoint.rotation.eulerAngles.y, viewPoint.rotation.eulerAngles.z);
+            if (mouseIsLocked)
+            {
+                if (Input.GetButtonDown("Cancel"))
+                    Cursor.lockState = CursorLockMode.None;
+            }
+            else
+            {
+                if(Input.GetButtonDown("Cancel"))
+                    Cursor.lockState = CursorLockMode.Locked;
+            }
+
+        }
     }
 }
