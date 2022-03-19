@@ -8,13 +8,7 @@ public class GunScript : MonoBehaviour
     private float fireDelay = 0f;
     public float range = 100f;
     public Camera cam;
-    public Image crosshair;
     public GameObject bulletImpact;
-    // Start is called before the first frame update
-    void Start()
-    {
-        crosshair.transform.position= new Vector2(Screen.width / 2, Screen.height / 2);
-    }
 
     // Update is called once per frame
     void Update()
