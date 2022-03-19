@@ -11,31 +11,26 @@ using System.Text;
 
 public class Launcher : MonoBehaviourPunCallbacks
 {
+
     public static Launcher instance;
     public GameObject loadingScreen;
+    public GameObject errorBox;
+    public TMP_Text errorBoxText;
     public GameObject menuButtons;
     public GameObject createRoomScreen;
     public GameObject exitButton;
     public GameObject roomScreen;
-    public GameObject errorScreen;
     public GameObject roomBrowserScreen;
-    public GameObject loginScreen;
-    public GameObject registerScreen;
+    public GameObject credsScreen;
     public GameObject startGameButton;
     public RoomButton roomButton;
     private List<RoomButton> allRoomButtons = new List<RoomButton>();
     private List<TMP_Text> playerLabels = new List<TMP_Text>();
-    public TMP_Text errorText;
     public TMP_Text roomNameText,playerNameLabel;
     public TMP_InputField createRoomInput;
     public TMP_Text loadingText;
-
-
-    public TMP_InputField usernameRegisterField;
-    public TMP_InputField passwordRegisterField;
-
-    public TMP_InputField usernameLoginField;
-    public TMP_InputField passwordLoginField;
+    public TMP_InputField usernameField;
+    public TMP_InputField passwordField;
     private string[] levelsToPlay = {"Mapa1"};
     public void Awake()
     {
@@ -47,51 +42,63 @@ public class Launcher : MonoBehaviourPunCallbacks
         loadingScreen.SetActive(false);
         createRoomScreen.SetActive(false);
         roomScreen.SetActive(false);
-        errorScreen.SetActive(false);
         roomBrowserScreen.SetActive(false);
-        loginScreen.SetActive(false);
-        registerScreen.SetActive(false);
+        credsScreen.SetActive(false);
     }
     public void Start()
     {
         CloseMenus();
-        loadingScreen.SetActive(true);
-        loadingText.text = "Connecting to Network";
-        PhotonNetwork.ConnectUsingSettings();
-        PhotonNetwork.AutomaticallySyncScene = true;
+        credsScreen.SetActive(true);
     }
     public override void OnConnectedToMaster()
     {
         CloseMenus();
-        loginScreen.SetActive(true);
-        
-    }
+        showLoadingScreen("Joining Lobby");
+        PhotonNetwork.JoinLobby();
 
+    }
+    private void ConnectToMasterServer(string username)
+    {
+        showLoadingScreen("Connecting to Master");
+        PhotonNetwork.ConnectUsingSettings();
+        PhotonNetwork.AutomaticallySyncScene = true;
+        PlayerPrefs.SetString("username", username);
+        PhotonNetwork.NickName = username;
+    }
+    private void showErrorBox(string error)
+    {
+        errorBox.SetActive(true);
+        errorBoxText.text = error;
+    }
     public void CallRegister()
     {
         StartCoroutine(Register());
     }
     IEnumerator Register()
     {
-        loadingScreen.SetActive(true);
-        loadingText.text = "Registering";
-        WWWForm form = new WWWForm();
-        form.AddField("username", usernameRegisterField.text);
-        form.AddField("password", passwordRegisterField.text);
-        UnityWebRequest www = UnityWebRequest.Post("http://161.230.225.30:4000/register", form);
-        yield return www.SendWebRequest();
-
-        if (www.responseCode != 200)
+        if (usernameField.text.Length != 0 || passwordField.text.Length!=0)
         {
-            CloseMenus();
-            showErrorScreen(www.downloadHandler.text);
+            showLoadingScreen("Registering");
+            WWWForm form = new WWWForm();
+            form.AddField("username", usernameField.text);
+            form.AddField("password", passwordField.text);
+            UnityWebRequest www = UnityWebRequest.Post("http://localhost:4000/register", form);
+            yield return www.SendWebRequest();
+
+            if (www.responseCode != 200)
+            {
+                loadingScreen.SetActive(false);
+                showErrorBox(www.downloadHandler.text);
+            }
+            else
+            {
+                CloseMenus();
+                ConnectToMasterServer(usernameField.text);
+            }
         }
         else
         {
-            PlayerPrefs.SetString("username", usernameLoginField.text);
-            PhotonNetwork.JoinLobby();
-            PhotonNetwork.NickName = usernameLoginField.text;
-            OpenMainMenu();
+            showErrorBox("Please fill the input boxes!");
         }
     }
 
@@ -101,49 +108,41 @@ public class Launcher : MonoBehaviourPunCallbacks
     }
     IEnumerator Login()
     {
-        loadingScreen.SetActive(true);
-        loadingText.text = "Authenticating";
-        WWWForm form = new WWWForm();
-        form.AddField("username", usernameLoginField.text);
-        form.AddField("password", passwordLoginField.text);
-        UnityWebRequest www = UnityWebRequest.Post("http://161.230.225.30:4000/login", form);
-        yield return www.SendWebRequest();
-
-        if (www.responseCode !=200)
+        if (usernameField.text.Length != 0 || passwordField.text.Length != 0)
         {
-            CloseMenus();
-            showErrorScreen(www.downloadHandler.text);
+            showLoadingScreen("Authenticating");
+            WWWForm form = new WWWForm();
+            form.AddField("username", usernameField.text);
+            form.AddField("password", passwordField.text);
+            UnityWebRequest www = UnityWebRequest.Post("http://localhost:4000/login", form);
+            yield return www.SendWebRequest();
+
+            if (www.responseCode != 200)
+            {
+                loadingScreen.SetActive(false);
+                showErrorBox(www.downloadHandler.text);
+            }
+            else
+            {
+                CloseMenus();
+                ConnectToMasterServer(usernameField.text);
+            }
         }
         else
         {
-            PlayerPrefs.SetString("username", usernameLoginField.text);
-            PhotonNetwork.JoinLobby();
-            PhotonNetwork.NickName = usernameLoginField.text;
-            OpenMainMenu();
+            showErrorBox("Please fill the input boxes!");
         }
     }
 
-    private void showErrorScreen(string erro)
-    {
-        errorText.text = erro;
-        errorScreen.SetActive(true);
-        exitButton.SetActive(true);
-    }
     public override void OnJoinedLobby()
     {
-        CloseMenus();
-        menuButtons.SetActive(true);
+        OpenMainMenu();
     }
     public void OpenCreateRoomPanel()
     {
         CloseMenus();
         createRoomScreen.SetActive(true);
         exitButton.SetActive(true);
-    }
-    public void OpenRegisterMenu()
-    {
-        CloseMenus();
-        registerScreen.SetActive(true);
     }
     public void OpenMainMenu()
     {
@@ -160,8 +159,7 @@ public class Launcher : MonoBehaviourPunCallbacks
             options.MaxPlayers = 8;
             PhotonNetwork.CreateRoom(createRoomInput.text,options);
             CloseMenus();
-            loadingText.text = "Creating room";
-            loadingScreen.SetActive(true);
+            showLoadingScreen("Creating Room");
         }
     }
     public override void OnJoinedRoom()
@@ -230,25 +228,17 @@ public class Launcher : MonoBehaviourPunCallbacks
     }
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        CloseMenus();
-        exitButton.SetActive(true);
-        errorScreen.SetActive(true);
-        errorText.text = "["+returnCode+"]Failed to create room: " + message;
-
+        showErrorBox("[" + returnCode + "]Failed to create room: " + message);
     }
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        CloseMenus();
-        exitButton.SetActive(true);
-        errorScreen.SetActive(true);
-        errorText.text = "[" + returnCode + "]Failed to join room: " + message;
+        showErrorBox( "[" + returnCode + "]Failed to join room: " + message);
     }
     public void LeaveRoom()
     {
         PhotonNetwork.LeaveRoom();
         CloseMenus();
-        loadingText.text = "Leaving room";
-        loadingScreen.SetActive(true);
+        showLoadingScreen("Leaving Room");
     }
     public override void OnLeftRoom()
     {
@@ -282,12 +272,16 @@ public class Launcher : MonoBehaviourPunCallbacks
             }
         }
     }
+    public void showLoadingScreen(string loadingMsg)
+    {
+        loadingText.text = loadingMsg;
+        loadingScreen.SetActive(true);
+    }
     public void JoinRoom(RoomInfo rinfo)
     {
         PhotonNetwork.JoinRoom(rinfo.Name);
         CloseMenus();
-        loadingText.text = "Joining Room";
-        loadingScreen.SetActive(true);
+        showLoadingScreen("Joining Room");
     }
     public void StartGame()
     {
