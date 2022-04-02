@@ -18,15 +18,10 @@ public class PlayerSpawner : MonoBehaviour
     {
         if (PhotonNetwork.IsConnected)
         {
-            SpawnPlayer();
+            Transform spawnPoint = spawnPrefabPoint;
+            player = PhotonNetwork.Instantiate(playerPrefab.name, spawnPoint.position, spawnPoint.rotation);
+            player.transform.Find("Player Camera").gameObject.SetActive(true);
+            player.transform.Find("BodyParts").Find("Goggles").GetComponent<MeshRenderer>().enabled = false;
         }
-    }
-
-    public void SpawnPlayer()
-    {
-        Transform spawnPoint = spawnPrefabPoint;
-        player=PhotonNetwork.Instantiate(playerPrefab.name, spawnPoint.position, spawnPoint.rotation);
-        player.transform.Find("Player Camera").gameObject.SetActive(true);
-        player.transform.Find("BodyParts").Find("Goggles").GetComponent<MeshRenderer>().enabled = false;
     }
 }

@@ -22,6 +22,10 @@ public class PlayerMoviment : MonoBehaviourPunCallbacks
     // Update is called once per frame
     void Update()
     {
+        if (this.gameObject.transform.position.y < -15)
+        {
+            //Die
+        }
         if (photonView.IsMine)
         {
             isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);

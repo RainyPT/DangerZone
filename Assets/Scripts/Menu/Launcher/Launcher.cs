@@ -11,7 +11,7 @@ using System.Text;
 
 public class Launcher : MonoBehaviourPunCallbacks
 {
-
+    private string publicIP = "localhost";
     public static Launcher instance;
     public GameObject loadingScreen;
     public GameObject errorBox;
@@ -82,7 +82,7 @@ public class Launcher : MonoBehaviourPunCallbacks
             WWWForm form = new WWWForm();
             form.AddField("username", usernameField.text);
             form.AddField("password", passwordField.text);
-            UnityWebRequest www = UnityWebRequest.Post("http://localhost:4000/register", form);
+            UnityWebRequest www = UnityWebRequest.Post("http://"+ publicIP + ":4000/register", form);
             yield return www.SendWebRequest();
 
             if (www.responseCode != 200)
@@ -114,7 +114,7 @@ public class Launcher : MonoBehaviourPunCallbacks
             WWWForm form = new WWWForm();
             form.AddField("username", usernameField.text);
             form.AddField("password", passwordField.text);
-            UnityWebRequest www = UnityWebRequest.Post("http://localhost:4000/login", form);
+            UnityWebRequest www = UnityWebRequest.Post("http://"+ publicIP + ":4000/login", form);
             yield return www.SendWebRequest();
 
             if (www.responseCode != 200)
